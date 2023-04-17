@@ -32,5 +32,5 @@ func main() {
 
 	router.HandleFunc("/orders", service.OrderService).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":9000", router))
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
