@@ -1,4 +1,4 @@
-package OrderPayment
+package main
 
 import (
 	"OrderPayment/service"
@@ -12,5 +12,5 @@ func main() {
 	http.HandleFunc("/payments", service.PaymentHandle)
 
 	fmt.Println("Payment service started on port 9000")
-	http.ListenAndServe(":9000", nil)
+	http.ListenAndServe(":8000", nil)
 }
