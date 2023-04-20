@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/godror/godror v0.37.0
 	github.com/gorilla/mux v1.8.0
+	github.com/streadway/amqp v1.0.0
 )
 
 require (

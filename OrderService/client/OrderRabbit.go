@@ -4,34 +4,68 @@ import (
 	"OrderService/entity"
 	_ "bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/streadway/amqp"
 	"net/http"
 )
 
-func OrderService(w http.ResponseWriter, r *http.Request) {
+var rabbitmqURI = "amqp://guest:guest@localhost:5672/"
+var queueName = "payment_queue"
+
+func OrderRabbit(w http.ResponseWriter, order entity.Order) {
 	order := entity.Order{}
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	// call api to service payment to check the amount
-	response := client.OrderClient(order, w)
-
-	defer response.Body.Close()
-	// parse response from paymentHandler
-
-	var paymentResponse entity.PaymentResponse
-	err = json.NewDecoder(response.Body).Decode(&paymentResponse)
+	conn, err := amqp.Dial(rabbitmqURI)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		queueName, // name
+		false,     // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// response for orderHandler
-	if !paymentResponse.Status {
-		http.Error(w, "Transaction failed. Invalid balance", http.StatusBadRequest)
+	body, err := json.Marshal(order)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	// encode response body as JSON and send response
-	w.WriteHeader(http.StatusOK)
+
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(body),
+		})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Trả về kết quả thành công cho user
+	fmt.Fprintf(w, "Order received: %v", order)
 }
