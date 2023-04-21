@@ -31,6 +31,6 @@ func PaymentHandle(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Not enough balance"})
 		return
 	}
-	balance -= paymentReq.Amount
+	balanceNumber -= paymentReq.Amount
 	w.WriteHeader(http.StatusOK)
 }

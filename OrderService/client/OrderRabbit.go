@@ -13,12 +13,6 @@ var rabbitmqURI = "amqp://guest:guest@localhost:5672/"
 var queueName = "payment_queue"
 
 func OrderRabbit(w http.ResponseWriter, order entity.Order) {
-	order := entity.Order{}
-	err := json.NewDecoder(r.Body).Decode(&order)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	conn, err := amqp.Dial(rabbitmqURI)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
