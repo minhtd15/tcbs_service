@@ -7,18 +7,18 @@ import (
 
 var db *sql.DB
 
-func GetBalance(userID int) (float64, error) {
+func GetBalance(userID int) float64 {
 	// db connector
 	db, err := connectToDB()
 
 	// logical solve
 	var rs float64
-	row := db.QueryRow("SELECT balance FROM PAYMENTDB WHERE USER_ID = ?", userID)
+	row := db.QueryRow("SELECT balance FROM MINHTD5.PAYMENTDB WHERE USER_ID = ?", userID)
 	err = row.Scan(&rs)
 	if err != nil {
-		return 0.0, err
+		return 0.0
 	}
-	return rs, err
+	return rs
 }
 
 func connectToDB() (*sql.DB, error) {

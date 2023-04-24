@@ -1,7 +1,6 @@
 package service
 
 import (
-	"OrderService/client"
 	"OrderService/entity"
 	_ "bytes"
 	"encoding/json"
@@ -16,14 +15,26 @@ func OrderService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// call api to service payment to check the amount, cai nay phai de trong client
-	response := client.OrderClient(order, w)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "http://localhost:8080/payment", nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	defer response.Body.Close()
-	// parse response from paymentHandler
+	q := req.URL.Query()
+	q.Add("user_id", order.UserID)
+	req.URL.RawQuery = q.Encode()
+	resp, err := client.Do(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defer resp.Body.Close()
 
 	var paymentResponse entity.PaymentResponse
-	err = json.NewDecoder(response.Body).Decode(&paymentResponse)
+	err = json.NewDecoder(resp.Body).Decode(&paymentResponse)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
