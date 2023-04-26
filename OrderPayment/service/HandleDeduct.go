@@ -1,6 +1,7 @@
 package service
 
 import (
+	"OrderPayment/controller"
 	"OrderPayment/entity"
 	"encoding/json"
 	"net/http"
@@ -24,10 +25,10 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func deductBalance(userID int, amount float64) error {
-	balance := 100000.0
-	//if err != nil {
-	//	return UserNotFound
-	//}
+	balance, err := controller.GetBalance(userID)
+	if err != nil {
+		return UserNotFound
+	}
 	if balance < amount {
 		return InsufficientBalance
 	}
