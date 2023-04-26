@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -20,6 +21,7 @@ func DeductBalance(userID int, amount float64) error {
 		return err
 	}
 	defer resp.Body.Close()
+	fmt.Println("cuuuuuu")
 
 	// check deduct balance from service payment
 	if resp.StatusCode != http.StatusOK {

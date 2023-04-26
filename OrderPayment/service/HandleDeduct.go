@@ -4,6 +4,7 @@ import (
 	"OrderPayment/controller"
 	"OrderPayment/entity"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -19,20 +20,28 @@ func HandleDeduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	// return result
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Order successful"))
 }
 
 func deductBalance(userID int, amount float64) error {
+	fmt.Println("da tru")
 	balance, err := controller.GetBalance(userID)
+	fmt.Printf("da tru %v and %v \n", amount, balance)
 	if err != nil {
 		return UserNotFound
 	}
+	//balance := 1000.0
+
 	if balance < amount {
 		return InsufficientBalance
 	}
 	balance -= amount
+	fmt.Println(balance)
+
+	//err = controller.UpdateBalance(balance, userID)
+
 	return nil
 }
 

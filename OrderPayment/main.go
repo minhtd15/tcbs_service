@@ -19,7 +19,7 @@ func main() {
 	//http.ListenAndServe(":9000", nil)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/payment/balance/", service.HandleBalance)
+	//r.HandleFunc("/payment/balance/", service.HandleBalance)
 	r.HandleFunc("/payment/deduct", service.HandleDeduct)
 	log.Fatal(http.ListenAndServe(":8081", r))
 }
