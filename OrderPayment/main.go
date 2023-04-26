@@ -5,6 +5,7 @@ import (
 	_ "OrderPayment/service"
 	"database/sql"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	//http.ListenAndServe(":9000", nil)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/payment", service.PaymentHandle).Methods("GET")
-	http.ListenAndServe(":8081", r)
+	r.HandleFunc("/payment/balance/", service.HandleBalance)
+	r.HandleFunc("/payment/deduct", service.HandleDeduct)
+	log.Fatal(http.ListenAndServe(":8081", r))
 }

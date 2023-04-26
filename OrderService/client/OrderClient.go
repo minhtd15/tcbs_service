@@ -6,11 +6,11 @@ import (
 	"strconv"
 )
 
-func OrderClient(order entity.Order, w http.ResponseWriter) *http.Response {
-	response, err := http.Get("http://localhost:1522/payment?amount=" + strconv.FormatFloat(order.Amount, 'f', 2, 64))
+func OrderClient(order entity.OrderRequest, w http.ResponseWriter) (*http.Response, error) {
+	resp, err := http.Get("http://localhost:8081/payment/balance/" + strconv.Itoa(order.UserID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
+		return nil, err
 	}
-	return response
+	return resp, err
 }
