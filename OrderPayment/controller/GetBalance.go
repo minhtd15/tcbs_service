@@ -7,15 +7,7 @@ import (
 )
 
 func GetBalance(userID int) (float64, error) {
-	db, err := sql.Open("godror", "system/oracle@(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=orclpdb1)))")
-	if err != nil {
-		return 0, err
-	}
-	defer db.Close()
-	err = db.Ping()
-	if err != nil {
-		return 0.0, err
-	}
+	db, err := ConnectToDB()
 
 	fmt.Println("Connected to Oracle")
 	// db connector
@@ -23,7 +15,7 @@ func GetBalance(userID int) (float64, error) {
 
 	// logical solve
 	var balance float64
-	err = db.QueryRow("select BALANCE from MINHTD5.PAYMENTDB where USER_ID = 123").Scan(&balance)
+	err = db.QueryRow("select BALANCE from MINHTD5.PAYMENTDB where USER_ID = ?", userID).Scan(&balance)
 	if err != nil {
 		fmt.Println(err)
 		return 0, err

@@ -32,7 +32,6 @@ func deductBalance(userID int, amount float64) error {
 	if err != nil {
 		return UserNotFound
 	}
-	//balance := 1000.0
 
 	if balance < amount {
 		return InsufficientBalance
@@ -40,7 +39,10 @@ func deductBalance(userID int, amount float64) error {
 	balance -= amount
 	fmt.Println(balance)
 
-	//err = controller.UpdateBalance(balance, userID)
+	balance, err = controller.UpdateBalance(balance, userID)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -1,10 +1,10 @@
 package controller
 
-func UpdateBalance(balance float64, userID int) error {
+func UpdateBalance(balance float64, userID int) (float64, error) {
 	db, _ := ConnectToDB()
-	_, err := db.Exec("UPDATE MINHTD5.PAYMENTDB SET BALANCE = ? WHERE USER_ID = ?", balance, userID)
+	_, err := db.Exec("UPDATE service.PAYMENTDB SET BALANCE = ? WHERE USER_ID = ?", balance, userID)
 	if err != nil {
-		return err
+		return 0.0, err
 	}
-	return nil
+	return balance, nil
 }
