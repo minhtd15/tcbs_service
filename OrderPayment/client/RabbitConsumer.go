@@ -13,6 +13,7 @@ func RabbitConsumer(w http.ResponseWriter) {
 	}
 	defer conn.Close()
 
+	// create channel and receive message
 	ch, err := conn.Channel()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -20,6 +21,7 @@ func RabbitConsumer(w http.ResponseWriter) {
 	}
 	defer ch.Close()
 
+	// declare queue to receive message from service order
 	q, err := ch.QueueDeclare(
 		"payment_queue",
 		false,

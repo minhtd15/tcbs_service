@@ -1,61 +1,53 @@
 package client
 
 import (
-	"OrderService/entity"
-	"encoding/json"
 	"github.com/streadway/amqp"
-	"net/http"
+	"log"
 )
 
-func RabbitSender(w http.ResponseWriter, order entity.OrderRequest) {
+func RabbitSender(orderBytes []byte) error {
+	// Connect to RabbitMQ server
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
-
 	defer conn.Close()
+
+	// Open a channel
 	ch, err := conn.Channel()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 	defer ch.Close()
 
-	err = ch.ExchangeDeclare(
-		"order_exchange",
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil,
+	// Declare a queue
+	q, err := ch.QueueDeclare(
+		"order_queue", // name
+		false,         // durable
+		false,         // delete when unused
+		false,         // exclusive
+		false,         // no-wait
+		nil,           // arguments
 	)
-
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	body, err := json.Marshal(order)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	// Publish the message to the queue
 	err = ch.Publish(
-		"order_exchange",
-		"",
-		false,
-		false,
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        body,
-		})
+			Body:        orderBytes,
+		},
+	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return err
 	}
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(order)
+
+	log.Printf("Sent message: %s", orderBytes)
+	return nil
 }
