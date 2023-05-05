@@ -1,79 +1,63 @@
 package main
 
 import (
+	"OrderPayment/client"
+	"OrderPayment/entity"
 	"OrderPayment/service"
 	_ "OrderPayment/service"
 	"database/sql"
-	"github.com/gorilla/mux"
-	"github.com/streadway/amqp"
+	"encoding/json"
+	_ "github.com/gorilla/mux"
 	"log"
-	"net/http"
+	_ "net/http"
 )
 
 var db *sql.DB
 
 func main() {
-	//http.HandleFunc("/balance/{userID}", service.BalanceHandle)
-	//http.HandleFunc("/payments", service.PaymentHandle)
-	//
-	//fmt.Println("Payment service started on port 9000")
-	//http.ListenAndServe(":9000", nil)
+	// process message, update the balance
+	//r := mux.NewRouter()
+	//r.HandleFunc("/payment/balance/", service.HandleBalance)
+	//r.HandleFunc("/payment/deduct", service.HandleDeduct)
+	//log.Fatal(http.ListenAndServe(":8081", r))
+	//log.Printf("Payment completed")
 
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ server: %v", err)
-	}
-	defer conn.Close()
-
-	// create channel to send and receive message
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open the channel: %v", err)
-	}
-	defer conn.Close()
-
-	// declare queue to receive message from service order
-	q, err := ch.QueueDeclare(
-		"payment_queue",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Fatalf("Failed to declare a queue: %v", err)
-	}
-
-	// register consumer for queue and process message when received
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Fatalf("Failed to register a consumer: %v", err)
-	}
+	msgs := client.RabbitConsumer()
 
 	forever := make(chan bool)
 	go func() {
 		for d := range msgs {
 			log.Printf("Received a message: %s", d.Body)
 
-			// process message, update the balance
-			r := mux.NewRouter()
-			//r.HandleFunc("/payment/balance/", service.HandleBalance)
-			r.HandleFunc("/payment/deduct", service.HandleDeduct)
-			log.Fatal(http.ListenAndServe(":8081", r))
-			log.Printf("Payment completed")
+			var req entity.DeductRequest
+			err := json.Unmarshal(d.Body, &req)
+			if err != nil {
+				log.Printf("Failed to unmarshal message: %v", err)
+				continue
+			}
+
+			// Deduct Balance from user's account
+			err = service.HandleDeduct(req.UserID, req.Amount)
+
+			// send a success message to RabbitMQ queue
+			successResp := entity.PaymentResponse{
+				Success: true,
+				Message: "Payment processed successfully",
+			}
+
+			successRespBytes, err := json.Marshal(successResp)
+			if err != nil {
+				log.Printf("Failed to marshal response: %v", err)
+				continue
+			}
+			err = client.SendMessage(successRespBytes)
+			if err != nil {
+				log.Printf("Failed to send success message: %v", err)
+				continue
+			}
 		}
 	}()
 
 	log.Printf("Waiting for messages")
 	<-forever
-
 }

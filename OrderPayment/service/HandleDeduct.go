@@ -2,27 +2,24 @@ package service
 
 import (
 	"OrderPayment/controller"
-	"OrderPayment/entity"
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"log"
 )
 
-func HandleDeduct(w http.ResponseWriter, r *http.Request) {
-	var req entity.DeductRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func HandleDeduct(userID int, amount float64) error {
+	//var req entity.DeductRequest
+	//if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
 
 	// Deduct
-	if err := deductBalance(req.UserID, req.Amount); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if err := deductBalance(userID, amount); err != nil {
+		return fmt.Errorf("Failed to deduct and update balance: %v", err)
 	}
 	// return result
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Order successful"))
+	log.Printf("Deducted %v from account %v", amount, userID)
+	return nil
 }
 
 func deductBalance(userID int, amount float64) error {

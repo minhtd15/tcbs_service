@@ -1,10 +1,19 @@
 package controller
 
+import "fmt"
+
 func UpdateBalance(balance float64, userID int) (float64, error) {
 	db, _ := ConnectToDB()
-	_, err := db.Exec("UPDATE service.PAYMENTDB SET BALANCE = ? WHERE USER_ID = ?", balance, userID)
+	tx, err := db.Begin()
+	_, err = db.Exec("UPDATE service.PAYMENTDB SET BALANCE = ? WHERE USER_ID = ?", balance, userID)
 	if err != nil {
-		return 0.0, err
+		tx.Rollback()
+		return 0.0, fmt.Errorf("failed to deduct balance: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return 0.0, fmt.Errorf("Failed to update balance: %v", err)
 	}
 	return balance, nil
 }

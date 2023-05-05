@@ -3,23 +3,21 @@ package client
 import (
 	"github.com/streadway/amqp"
 	"log"
-	"net/http"
 )
 
-func RabbitConsumer(w http.ResponseWriter) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+func RabbitConsumer() <-chan amqp.Delivery {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ server: %v", err)
 	}
 	defer conn.Close()
 
-	// create channel and receive message
+	// create channel to send and receive message
 	ch, err := conn.Channel()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		log.Fatalf("Failed to open the channel: %v", err)
 	}
-	defer ch.Close()
+	defer conn.Close()
 
 	// declare queue to receive message from service order
 	q, err := ch.QueueDeclare(
@@ -31,9 +29,10 @@ func RabbitConsumer(w http.ResponseWriter) {
 		nil,
 	)
 	if err != nil {
-		log.Fatalf("Failed to decalre a queue: %v", err)
+		log.Fatalf("Failed to declare a queue: %v", err)
 	}
 
+	// register consumer for queue and process message when received
 	msgs, err := ch.Consume(
 		q.Name,
 		"",
@@ -44,22 +43,7 @@ func RabbitConsumer(w http.ResponseWriter) {
 		nil,
 	)
 	if err != nil {
-		log.Fatalf("Falied to register a consumer: %v", err)
+		log.Fatalf("Failed to register a consumer: %v", err)
 	}
-	forever := make(chan bool)
-
-	go func() {
-		for d := range msgs {
-			log.Printf("Received a message: %v", d.Body)
-
-			// xu ly message, cap nhat tai khoan cua khach hang
-			// ...
-
-			log.Printf("Payment completed")
-
-		}
-	}()
-
-	log.Printf("Waiting for messages...")
-	<-forever
+	return msgs
 }

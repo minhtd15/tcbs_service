@@ -10,15 +10,19 @@ func GetBalance(userID int) (float64, error) {
 	db, err := ConnectToDB()
 
 	fmt.Println("Connected to Oracle")
-	// db connector
-	//db, err := ConnectToDB()
+	tx, err := db.Begin()
 
 	// logical solve
 	var balance float64
 	err = db.QueryRow("select BALANCE from MINHTD5.PAYMENTDB where USER_ID = ?", userID).Scan(&balance)
 	if err != nil {
+		tx.Rollback()
 		fmt.Println(err)
 		return 0, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return 0.0, fmt.Errorf("Failed to commit transaction: %v", err)
 	}
 
 	return balance, err
